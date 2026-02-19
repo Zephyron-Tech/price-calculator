@@ -6,7 +6,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ReferenceLine, ReferenceArea, Cell,
 } from 'recharts';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Menu, X } from 'lucide-react';
 import { computeModel, PARAM_META, PRESET_CITIES, K_FLEET, T_IDEAL } from '../lib/model';
 import type { City, ParamKey } from '../lib/model';
 import { useCities } from '../lib/useCities';
@@ -52,8 +52,8 @@ const CHART_DARK = {
   green:    '#10b981',
   orange:   '#f59e0b',
   red:      '#ef4444',
-  text1:    '#8ba5c8',
-  text2:    '#4a6480',
+  text1:    '#a0bcd8',
+  text2:    '#6f90aa',
   border:   '#1a2d4a',
   bg3:      '#0f1e35',
 };
@@ -64,8 +64,8 @@ const CHART_LIGHT = {
   green:    '#059669',
   orange:   '#d97706',
   red:      '#dc2626',
-  text1:    '#2d4f78',
-  text2:    '#5c7a9c',
+  text1:    '#1a3658',
+  text2:    '#3b5e80',
   border:   '#b8cce8',
   bg3:      '#dce7f7',
 };
@@ -148,10 +148,10 @@ function ParamSlider({ paramKey, city, onUpdate }: ParamSliderProps) {
     <div className="mb-4">
       {/* ── Header row ──────────────────────────────────────────────────── */}
       <div className="flex items-baseline gap-2 mb-1.5">
-        <span className="font-mono text-[13px] font-semibold text-cw-accent-hi min-w-[26px]">
+        <span className="font-mono text-[14px] font-semibold text-cw-accent-hi min-w-[26px]">
           {meta.symbol}
         </span>
-        <span className="text-[13px] text-cw-text-1 flex-1">{meta.label}</span>
+        <span className="text-[14px] text-cw-text-1 flex-1">{meta.label}</span>
 
         {/* Inline editable number */}
         <input
@@ -173,11 +173,11 @@ function ParamSlider({ paramKey, city, onUpdate }: ParamSliderProps) {
               inputRef.current?.blur();
             }
           }}
-          className="font-mono text-[14px] text-cw-text-0 text-right bg-transparent w-[60px] px-1 py-0 rounded-[4px] outline-none border border-transparent hover:border-cw-border focus:border-cw-accent transition-colors duration-100"
+          className="font-mono text-[15px] text-cw-text-0 text-right bg-transparent w-[60px] px-1 py-0 rounded-[4px] outline-none border border-transparent hover:border-cw-border focus:border-cw-accent transition-colors duration-100"
           aria-label={meta.label}
         />
         {displayUnit && (
-          <span className="font-mono text-[10px] text-cw-text-2 -ml-0.5">{displayUnit}</span>
+          <span className="font-mono text-[12px] text-cw-text-2 -ml-0.5">{displayUnit}</span>
         )}
       </div>
 
@@ -193,7 +193,7 @@ function ParamSlider({ paramKey, city, onUpdate }: ParamSliderProps) {
       {/* ── T freshness preview ─────────────────────────────────────────── */}
       {tQtVal !== null && (
         <div
-          className="font-mono text-[10px] mt-1 leading-relaxed"
+          className="font-mono text-[12px] mt-1 leading-relaxed"
           style={{ color: val > 7 ? 'var(--cw-orange)' : 'var(--cw-green)' }}
         >
           → Qt&nbsp;=&nbsp;{(tQtVal * 100).toFixed(1)}&nbsp;%
@@ -203,7 +203,7 @@ function ParamSlider({ paramKey, city, onUpdate }: ParamSliderProps) {
 
       {/* ── Coverage km note ────────────────────────────────────────────── */}
       {paramKey === 'coverage_pct' && (
-        <div className="font-mono text-[10px] text-cw-text-2 mt-1 leading-relaxed">
+        <div className="font-mono text-[12px] text-cw-text-2 mt-1 leading-relaxed">
           = {fNum(Math.round((val / 100) * city.L))} km z {fNum(city.L)} km celkem
         </div>
       )}
@@ -233,14 +233,14 @@ function ResultCard({ label, value, sub, hero, color }: ResultCardProps) {
       )}
       style={{ borderLeftColor: borderColor }}
     >
-      <div className="text-[11px] text-cw-text-2 tracking-[0.08em] uppercase mb-1">{label}</div>
+      <div className="text-[13px] text-cw-text-2 tracking-[0.08em] uppercase mb-1">{label}</div>
       <div
-        className={cn('font-mono font-semibold', hero ? 'text-[26px]' : 'text-[18px]')}
+        className={cn('font-mono font-semibold', hero ? 'text-[30px]' : 'text-[21px]')}
         style={{ color: valueColor }}
       >
         {value}
       </div>
-      {sub && <div className="font-mono text-[10px] text-cw-text-2 mt-0.5">{sub}</div>}
+      {sub && <div className="font-mono text-[12px] text-cw-text-2 mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -257,16 +257,16 @@ function CalculatorTab({ city, onUpdate }: CalculatorTabProps) {
   const qColor = m.Q < 0.4 ? 'var(--cw-red)' : m.Q < 0.7 ? 'var(--cw-orange)' : 'var(--cw-green)';
 
   return (
-    <div className="grid grid-cols-[1fr_380px] h-full min-h-0">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_440px] lg:h-full lg:min-h-0">
       {/* ── Sliders ─────────────────────────────────────────────────── */}
-      <div className="overflow-y-auto p-5 border-r border-cw-border">
+      <div className="p-4 md:p-5 border-b border-cw-border lg:border-b-0 lg:border-r lg:overflow-y-auto">
         {GROUPS.map((group) => {
           const keys = Object.entries(PARAM_META)
             .filter(([, meta]) => meta.group === group)
             .map(([k]) => k as ParamKey);
           return (
             <div key={group} className="mb-6">
-              <div className="text-[11px] font-bold tracking-[0.12em] uppercase text-cw-text-2 mb-3 pb-1.5 border-b border-cw-border">
+              <div className="text-[13px] font-bold tracking-[0.12em] uppercase text-cw-text-2 mb-3 pb-1.5 border-b border-cw-border">
                 {group}
               </div>
               {keys.map((k) => (
@@ -278,8 +278,8 @@ function CalculatorTab({ city, onUpdate }: CalculatorTabProps) {
       </div>
 
       {/* ── Results ─────────────────────────────────────────────────── */}
-      <div className="overflow-y-auto p-5 bg-cw-bg-1">
-        <div className="text-[11px] font-bold tracking-[0.12em] uppercase text-cw-text-2 mb-4">
+      <div className="p-4 md:p-5 bg-cw-bg-1 lg:overflow-y-auto">
+        <div className="text-[13px] font-bold tracking-[0.12em] uppercase text-cw-text-2 mb-4">
           Výsledky modelu
         </div>
 
@@ -390,11 +390,11 @@ function ChartsTab({ city, cities, chartColors }: ChartsTabProps) {
     border:          `1px solid ${chartColors.border}`,
     borderRadius:    6,
     fontFamily:      'JetBrains Mono, monospace',
-    fontSize:        11,
+    fontSize:        12,
     color:           chartColors.text1,
   };
   const axisProps = {
-    tick:     { fill: chartColors.text2, fontSize: 10, fontFamily: 'JetBrains Mono, monospace' },
+    tick:     { fill: chartColors.text2, fontSize: 11, fontFamily: 'JetBrains Mono, monospace' },
     axisLine: { stroke: chartColors.border },
     tickLine: { stroke: chartColors.border },
   };
@@ -403,14 +403,15 @@ function ChartsTab({ city, cities, chartColors }: ChartsTabProps) {
   const kFmt      = (v: number) => v >= 1e6 ? `${(v / 1e6).toFixed(1)}M` : `${(v / 1e3).toFixed(0)}k`;
 
   return (
-    <div className="grid grid-cols-2 gap-4 p-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 p-3 md:p-5">
 
       {/* 1) Qf and Q vs CI ────────────────────────────────────────────── */}
-      <div className="bg-cw-bg-2 border border-cw-border rounded-[6px] p-4">
-        <div className="text-[11px] font-semibold tracking-[0.08em] uppercase text-cw-text-1 mb-3.5">
+      <div className="bg-cw-bg-2 border border-cw-border rounded-[6px] p-3 md:p-4">
+        <div className="text-[13px] font-semibold tracking-[0.08em] uppercase text-cw-text-1 mb-3.5">
           Kvalita vs. index pokrytí (CI) — k_fleet = {K_FLEET}
         </div>
-        <ResponsiveContainer width="100%" height={260}>
+        <div className="h-[200px] sm:h-[240px] xl:h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart data={qfVsCiData} margin={{ top: 22, right: 16, bottom: 5, left: 0 }}>
             <CartesianGrid {...gridProps} />
             <XAxis dataKey="CI" {...axisProps} />
@@ -424,30 +425,32 @@ function ChartsTab({ city, cities, chartColors }: ChartsTabProps) {
               x={parseFloat(m.CI.toFixed(0))}
               stroke={chartColors.orange}
               strokeDasharray="5 3"
-              label={{ value: `CI = ${m.CI.toFixed(1)}`, position: 'insideTopRight', fill: chartColors.orange, fontSize: 9 }}
+              label={{ value: `CI = ${m.CI.toFixed(1)}`, position: 'insideTopRight', fill: chartColors.orange, fontSize: 10 }}
             />
             <ReferenceLine
               y={m.Qt}
               stroke={chartColors.text2}
               strokeDasharray="3 3"
-              label={{ value: `Qt = ${(m.Qt * 100).toFixed(0)} %`, position: 'insideBottomRight', fill: chartColors.text2, fontSize: 9 }}
+              label={{ value: `Qt = ${(m.Qt * 100).toFixed(0)} %`, position: 'insideBottomRight', fill: chartColors.text2, fontSize: 11 }}
             />
-            <Legend wrapperStyle={{ fontSize: 10, fontFamily: 'JetBrains Mono, monospace', color: chartColors.text1 }} />
+            <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', color: chartColors.text1 }} />
             <Line type="monotone" dataKey="Qf" stroke={chartColors.accent}  dot={false} strokeWidth={2} name="Qf (fleet)" />
             <Line type="monotone" dataKey="Q"  stroke={chartColors.green}   dot={false} strokeWidth={2} name="Q = R×Qf×Qt" strokeDasharray="4 2" />
           </LineChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
       {/* 2) Qt vs T ───────────────────────────────────────────────────── */}
-      <div className="bg-cw-bg-2 border border-cw-border rounded-[6px] p-4">
-        <div className="text-[11px] font-semibold tracking-[0.08em] uppercase text-cw-text-1 mb-3.5">
+      <div className="bg-cw-bg-2 border border-cw-border rounded-[6px] p-3 md:p-4">
+        <div className="text-[13px] font-semibold tracking-[0.08em] uppercase text-cw-text-1 mb-3.5">
           Vliv čerstvosti dat (T) — Qt
         </div>
-        <ResponsiveContainer width="100%" height={260}>
+        <div className="h-[200px] sm:h-[240px] xl:h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart data={qtVsTData} margin={{ top: 22, right: 16, bottom: 5, left: 0 }}>
             <CartesianGrid {...gridProps} />
-            <XAxis dataKey="T" {...axisProps} label={{ value: 'dní', position: 'insideBottomRight', offset: -5, fill: chartColors.text2, fontSize: 10 }} />
+            <XAxis dataKey="T" {...axisProps} label={{ value: 'dní', position: 'insideBottomRight', offset: -5, fill: chartColors.text2, fontSize: 11 }} />
             <YAxis domain={[0, 1]} {...axisProps} tickFormatter={pctFmt} />
             <Tooltip
               contentStyle={tooltipStyle}
@@ -458,31 +461,33 @@ function ChartsTab({ city, cities, chartColors }: ChartsTabProps) {
               x1={7} x2={30}
               fill={chartColors.red}
               fillOpacity={0.07}
-              label={{ value: 'mimo optimum', position: 'insideTopLeft', fill: chartColors.red, fontSize: 9 }}
+              label={{ value: 'mimo optimum', position: 'insideTopLeft', fill: chartColors.red, fontSize: 10 }}
             />
             <ReferenceLine
               x={7}
               stroke={chartColors.red}
               strokeDasharray="4 2"
-              label={{ value: 'T = 7', position: 'insideTopRight', fill: chartColors.red, fontSize: 9 }}
+              label={{ value: 'T = 7', position: 'insideTopRight', fill: chartColors.red, fontSize: 10 }}
             />
             <ReferenceLine
               x={Math.min(city.T, 30)}
               stroke={chartColors.orange}
               strokeDasharray="5 3"
-              label={{ value: `Aktuální T = ${city.T} dní`, position: 'insideBottomRight', fill: chartColors.orange, fontSize: 9 }}
+              label={{ value: `Aktuální T = ${city.T} dní`, position: 'insideBottomRight', fill: chartColors.orange, fontSize: 10 }}
             />
             <Line type="monotone" dataKey="Qt" stroke={chartColors.orange} dot={false} strokeWidth={2} name="Qt" />
           </LineChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
       {/* 3) SV_real sensitivity on alpha ─────────────────────────────── */}
-      <div className="bg-cw-bg-2 border border-cw-border rounded-[6px] p-4">
-        <div className="text-[11px] font-semibold tracking-[0.08em] uppercase text-cw-text-1 mb-3.5">
+      <div className="bg-cw-bg-2 border border-cw-border rounded-[6px] p-3 md:p-4">
+        <div className="text-[13px] font-semibold tracking-[0.08em] uppercase text-cw-text-1 mb-3.5">
           Citlivost na alpha (podíl ovlivněných zásahů)
         </div>
-        <ResponsiveContainer width="100%" height={260}>
+        <div className="h-[200px] sm:h-[240px] xl:h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={svSensData} margin={{ top: 10, right: 16, bottom: 5, left: 0 }}>
             <CartesianGrid {...gridProps} />
             <XAxis dataKey="label" {...axisProps} />
@@ -498,24 +503,27 @@ function ChartsTab({ city, cities, chartColors }: ChartsTabProps) {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
       {/* 4) Price breakdown ──────────────────────────────────────────── */}
-      <div className="bg-cw-bg-2 border border-cw-border rounded-[6px] p-4">
-        <div className="text-[11px] font-semibold tracking-[0.08em] uppercase text-cw-text-1 mb-3.5">
+      <div className="bg-cw-bg-2 border border-cw-border rounded-[6px] p-3 md:p-4">
+        <div className="text-[13px] font-semibold tracking-[0.08em] uppercase text-cw-text-1 mb-3.5">
           Srovnání cen — struktura
         </div>
-        <ResponsiveContainer width="100%" height={260}>
+        <div className="h-[200px] sm:h-[240px] xl:h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={priceData} margin={{ top: 10, right: 16, bottom: 5, left: 0 }}>
             <CartesianGrid {...gridProps} />
             <XAxis dataKey="name" {...axisProps} />
             <YAxis {...axisProps} tickFormatter={kFmt} />
             <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [fCZK(v)]} />
-            <Legend wrapperStyle={{ fontSize: 10, fontFamily: 'JetBrains Mono, monospace', color: chartColors.text1 }} />
+            <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', color: chartColors.text1 }} />
             <Bar dataKey="infrastruktura" stackId="p" fill={chartColors.accentHi} name="a × L" />
             <Bar dataKey="hodnota"        stackId="p" fill={chartColors.green}    radius={[3, 3, 0, 0]} name="b × SV_real" />
           </BarChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
     </div>
@@ -587,9 +595,9 @@ function CompareTab({ cities, activeCityId }: CompareTabProps) {
   }
 
   return (
-    <div className="p-5">
+    <div className="p-3 md:p-5">
       <div className="overflow-x-auto border border-cw-border rounded-[6px]">
-        <table className="w-full border-collapse font-mono text-xs">
+        <table className="w-full border-collapse font-mono text-[13px]">
           <thead className="bg-cw-bg-2 sticky top-0 z-[1]">
             <tr>
               {COMPARE_COLS.map((col) => (
@@ -597,7 +605,7 @@ function CompareTab({ cities, activeCityId }: CompareTabProps) {
                   key={col.key}
                   onClick={() => handleSort(col.key)}
                   className={cn(
-                    'px-3.5 py-2.5 text-[10px] font-bold tracking-[0.08em] uppercase border-b border-cw-border whitespace-nowrap cursor-pointer select-none',
+                    'px-3.5 py-2.5 text-[12px] font-bold tracking-[0.08em] uppercase border-b border-cw-border whitespace-nowrap cursor-pointer select-none',
                     col.align === 'left' ? 'text-left' : 'text-right',
                     sortKey === col.key ? 'text-cw-accent-hi' : 'text-cw-text-2 hover:text-cw-text-1'
                   )}
@@ -648,9 +656,10 @@ interface SidebarProps {
   saving: boolean;
   addCity: (name: string, defaults?: Partial<Omit<City, 'id' | 'name'>>) => void;
   deleteCity: (id: string) => void;
+  onClose: () => void;
 }
 
-function Sidebar({ cities, activeCityId, setActiveCityId, saving, addCity, deleteCity }: SidebarProps) {
+function Sidebar({ cities, activeCityId, setActiveCityId, saving, addCity, deleteCity, onClose }: SidebarProps) {
   const [newName, setNewName] = useState('');
 
   const handleAdd = useCallback(() => {
@@ -670,11 +679,20 @@ function Sidebar({ cities, activeCityId, setActiveCityId, saving, addCity, delet
   }, [addCity]);
 
   return (
-    <aside className="w-[280px] min-w-[280px] bg-cw-bg-1 border-r border-cw-border flex flex-col overflow-hidden">
+    <aside className="w-[280px] xl:w-[300px] bg-cw-bg-1 border-r border-cw-border flex flex-col overflow-hidden h-full">
       {/* ── Header ──────────────────────────────────────────────────── */}
       <div className="px-4 py-3.5 border-b border-cw-border shrink-0">
-        <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-cw-text-2 mb-2">
-          Města
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[12px] font-bold tracking-[0.12em] uppercase text-cw-text-2">
+            Města
+          </div>
+          <button
+            className="lg:hidden flex items-center justify-center w-7 h-7 rounded-[6px] text-cw-text-2 hover:text-cw-text-0 hover:bg-cw-bg-2 transition-colors"
+            onClick={onClose}
+            aria-label="Zavřít panel"
+          >
+            <X size={16} />
+          </button>
         </div>
         <div className="flex gap-1.5">
           <Input
@@ -685,7 +703,7 @@ function Sidebar({ cities, activeCityId, setActiveCityId, saving, addCity, delet
           />
           <Button size="icon" onClick={handleAdd} title="Přidat město">+</Button>
         </div>
-        <div className="text-[10px] text-cw-text-2 tracking-[0.08em] uppercase mt-2.5 mb-1">
+        <div className="text-[12px] text-cw-text-2 tracking-[0.08em] uppercase mt-2.5 mb-1">
           Rychlé přidání
         </div>
         <div className="flex flex-wrap gap-1">
@@ -711,10 +729,10 @@ function Sidebar({ cities, activeCityId, setActiveCityId, saving, addCity, delet
                     ? 'bg-cw-bg-2 border-cw-accent'
                     : 'border-transparent hover:bg-cw-bg-2'
                 )}
-                onClick={() => setActiveCityId(city.id)}
+                onClick={() => { setActiveCityId(city.id); onClose(); }}
               >
-                <div className="font-semibold text-[14px] text-cw-text-0">{city.name}</div>
-                <div className="font-mono text-[11px] text-cw-accent-hi mt-0.5">
+                <div className="font-semibold text-[15px] text-cw-text-0">{city.name}</div>
+                <div className="font-mono text-[13px] text-cw-accent-hi mt-0.5">
                   {fCZK(m.P)} / rok
                 </div>
               </div>
@@ -725,7 +743,7 @@ function Sidebar({ cities, activeCityId, setActiveCityId, saving, addCity, delet
 
       {/* ── Footer ──────────────────────────────────────────────────── */}
       <div className="px-4 py-2.5 border-t border-cw-border shrink-0">
-        <div className="font-mono text-[11px] text-cw-text-2 flex items-center gap-1.5 mb-2">
+        <div className="font-mono text-[13px] text-cw-text-2 flex items-center gap-1.5 mb-2">
           {saving ? (
             <><span className="saving-dot" />Ukládám…</>
           ) : (
@@ -749,6 +767,7 @@ function Sidebar({ cities, activeCityId, setActiveCityId, saving, addCity, delet
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('calculator');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const chartColors = theme === 'dark' ? CHART_DARK : CHART_LIGHT;
 
@@ -765,7 +784,7 @@ export default function App() {
 
   if (!loaded) {
     return (
-      <div className="flex items-center justify-center h-screen font-mono text-[13px] text-cw-text-2 tracking-[0.08em]">
+      <div className="flex items-center justify-center h-screen font-mono text-[14px] text-cw-text-2 tracking-[0.08em]">
         Načítám data…
       </div>
     );
@@ -780,27 +799,51 @@ export default function App() {
       </Head>
 
       <div className="flex h-screen overflow-hidden bg-cw-bg-0 text-cw-text-0 antialiased">
-        <Sidebar
-          cities={cities}
-          activeCityId={activeCityId}
-          setActiveCityId={setActiveCityId}
-          saving={saving}
-          addCity={addCity}
-          deleteCity={deleteCity}
-        />
+        {/* ── Mobile backdrop ───────────────────────────────────────────── */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* ── Sidebar wrapper — drawer on mobile, static on desktop ──────── */}
+        <div className={cn(
+          'fixed inset-y-0 left-0 z-40 transition-transform duration-200 ease-in-out',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          'lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:flex-shrink-0',
+        )}>
+          <Sidebar
+            cities={cities}
+            activeCityId={activeCityId}
+            setActiveCityId={setActiveCityId}
+            saving={saving}
+            addCity={addCity}
+            deleteCity={deleteCity}
+            onClose={() => setSidebarOpen(false)}
+          />
+        </div>
 
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* ── Header ────────────────────────────────────────────── */}
-          <header className="h-[58px] bg-cw-bg-1 border-b border-cw-border flex items-center px-6 shrink-0 gap-3">
-            <span className="text-[17px] font-extrabold tracking-[0.06em] text-cw-text-0">
+          <header className="h-[58px] bg-cw-bg-1 border-b border-cw-border flex items-center px-4 md:px-6 shrink-0 gap-3">
+            {/* Hamburger — mobile only */}
+            <button
+              className="lg:hidden flex items-center justify-center w-8 h-8 rounded-[6px] text-cw-text-2 hover:text-cw-text-0 hover:bg-cw-bg-2 transition-colors cursor-pointer"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Otevřít panel měst"
+            >
+              <Menu size={18} />
+            </button>
+            <span className="text-[19px] font-extrabold tracking-[0.06em] text-cw-text-0">
               CLEARWAY
             </span>
-            <span className="font-mono text-[10px] text-cw-text-2 tracking-[0.05em]">
+            <span className="font-mono text-[12px] text-cw-text-2 tracking-[0.05em] hidden sm:inline">
               MODEL v2.0
             </span>
             <div className="flex-1" />
             {activeCity && (
-              <span className="font-mono text-xs text-cw-text-2">{activeCity.name}</span>
+              <span className="font-mono text-[13px] text-cw-text-2 hidden md:inline">{activeCity.name}</span>
             )}
             {/* Theme toggle */}
             <button
@@ -814,12 +857,12 @@ export default function App() {
           </header>
 
           {/* ── Tab Bar ───────────────────────────────────────────── */}
-          <nav className="h-[46px] bg-cw-bg-1 border-b border-cw-border flex items-end px-5 gap-0.5 shrink-0">
+          <nav className="h-[46px] bg-cw-bg-1 border-b border-cw-border flex items-end px-3 md:px-5 gap-0.5 shrink-0">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 className={cn(
-                  'bg-transparent border-b-2 text-xs font-semibold tracking-[0.06em] uppercase px-4 pt-2.5 pb-2 transition-colors cursor-pointer',
+                  'bg-transparent border-b-2 text-[13px] font-semibold tracking-[0.06em] uppercase px-3 md:px-4 pt-2.5 pb-2 transition-colors cursor-pointer',
                   activeTab === t.id
                     ? 'border-cw-accent text-cw-text-0'
                     : 'border-transparent text-cw-text-2 hover:text-cw-text-1'
@@ -843,7 +886,7 @@ export default function App() {
               <CompareTab cities={cities} activeCityId={activeCityId} />
             )}
             {!activeCity && (
-              <div className="p-10 text-cw-text-2 font-mono text-[13px]">
+              <div className="p-10 text-cw-text-2 font-mono text-[14px]">
                 Vyberte nebo přidejte město v postranním panelu.
               </div>
             )}
