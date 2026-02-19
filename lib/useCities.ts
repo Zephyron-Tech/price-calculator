@@ -31,7 +31,13 @@ export function useCities() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ city }),
       });
-      const data = await res.json() as City[];
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data)) {
+        // Server error (e.g. read-only filesystem on Vercel without KV) —
+        // don't corrupt the cities state; return the city we tried to save.
+        console.error('[saveCity] Unexpected response', res.status, data);
+        return [city];
+      }
       setCities(data);
       return data;
     } finally {

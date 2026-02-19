@@ -15,6 +15,10 @@ function hasKV(): boolean {
   return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 }
 
+// ─── In-memory fallback (used when filesystem is read-only and KV is absent) ──
+
+let memoryStore: City[] | null = null;
+
 // ─── File-based fallback ───────────────────────────────────────────────────────
 
 async function fileGet(): Promise<City[]> {
@@ -22,13 +26,19 @@ async function fileGet(): Promise<City[]> {
     const text = await fs.readFile(DATA_FILE, 'utf-8');
     return JSON.parse(text) as City[];
   } catch {
-    return [];
+    return memoryStore ?? [];
   }
 }
 
 async function fileSet(cities: City[]): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(DATA_FILE, JSON.stringify(cities, null, 2), 'utf-8');
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.writeFile(DATA_FILE, JSON.stringify(cities, null, 2), 'utf-8');
+  } catch {
+    // Filesystem is read-only (e.g. Vercel serverless without KV configured).
+    // Fall back to in-memory store so the API doesn't return 500.
+    memoryStore = cities;
+  }
 }
 
 // ─── Public API ────────────────────────────────────────────────────────────────
