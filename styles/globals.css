@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS Variables — Dark theme (default) ───────────────────────────────── */
+:root {
+  --cw-bg-0:      #010812;
+  --cw-bg-1:      #060f1e;
+  --cw-bg-2:      #0b1628;
+  --cw-bg-3:      #0f1e35;
+  --cw-border:    #1a2d4a;
+  --cw-accent:    #1d6fe8;
+  --cw-accent-hi: #3b8cf8;
+  --cw-text-0:    #e8f0fe;
+  --cw-text-1:    #8ba5c8;
+  --cw-text-2:    #4a6480;
+  --cw-green:     #10b981;
+  --cw-orange:    #f59e0b;
+  --cw-red:       #ef4444;
+  --radius:       6px;
+}
+
+/* ─── CSS Variables — Light theme ────────────────────────────────────────── */
+:root.light {
+  --cw-bg-0:      #f4f7ff;
+  --cw-bg-1:      #eaf0fb;
+  --cw-bg-2:      #dce7f7;
+  --cw-bg-3:      #d0dcf0;
+  --cw-border:    #b8cce8;
+  --cw-accent:    #1d6fe8;
+  --cw-accent-hi: #1558c9;
+  --cw-text-0:    #0b1a30;
+  --cw-text-1:    #2d4f78;
+  --cw-text-2:    #5c7a9c;
+  --cw-green:     #059669;
+  --cw-orange:    #d97706;
+  --cw-red:       #dc2626;
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #__next {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--cw-bg-0);
+  color: var(--cw-text-0);
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--cw-bg-1); }
+::-webkit-scrollbar-thumb { background: var(--cw-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--cw-text-2); }
+
+/* ─── Saving dot animation ──────────────────────────────────────────────── */
+@keyframes saving-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.saving-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cw-orange);
+  animation: saving-pulse 0.8s ease-in-out infinite;
+}
+
+/* ─── Recharts Overrides ────────────────────────────────────────────────── */
+.recharts-default-tooltip {
+  background: var(--cw-bg-3) !important;
+  border: 1px solid var(--cw-border) !important;
+  border-radius: var(--radius) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+}
+
+.recharts-tooltip-label {
+  color: var(--cw-text-1) !important;
+}

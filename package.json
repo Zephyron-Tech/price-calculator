@@ -1,0 +1,35 @@
+{
+  "name": "clearway-model",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@radix-ui/react-scroll-area": "^1.2.1",
+    "@radix-ui/react-slider": "^1.2.1",
+    "@vercel/kv": "^2.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.462.0",
+    "next": "^14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.7",
+    "tailwind-merge": "^2.5.4",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.11",
+    "@types/react": "18.3.28",
+    "@types/react-dom": "^18.3.1",
+    "@types/uuid": "^10.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "typescript": "5.9.3"
+  }
+}
