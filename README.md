@@ -1,13 +1,15 @@
-# ClearWay Model v2.0
+# Cenové modely — Multi-project pricing calculator
 
-Matematický model průjezdnosti silnic pro Smart City / IZS aplikace.
-Sdílená data přes **Vercel KV** — více uživatelů vidí stejná data v reálném čase.
+Cenové modely pro správu silniční infrastruktury. Podporuje více projektů s různými matematickými modely.
+
+**Projekty:**
+- **ClearWay v2.0** — Inteligentní správa silniční sítě (Smart City / IZS)
+- **DALRIS v0.1** — Diagnostika a analýza lokálních rizik infrastruktury silnic (placeholder)
 
 ## Požadavky
 
 - Node.js 18+
-- Vercel CLI (`npm i -g vercel`)
-- Vercel účet s přístupem k Vercel KV
+- PostgreSQL databáze
 
 ---
 
@@ -19,31 +21,26 @@ Sdílená data přes **Vercel KV** — více uživatelů vidí stejná data v re
 npm install
 ```
 
-### 2. Přihlášení a propojení s Vercel projektem
+### 2. Nastavení databáze
+
+Vytvořte soubor `.env` v kořenové složce:
+
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/price_calculator
+```
+
+### 3. Migrace databáze
 
 ```bash
-vercel login
-vercel link
+npx prisma migrate dev --name init
 ```
 
-### 3. Vytvoření Vercel KV databáze
+### 4. (Volitelně) Migrace dat z cities.json
+
+Pokud máte existující data v `data/cities.json`:
 
 ```bash
-vercel kv create clearway-db
-```
-
-> Pokud KV databáze již existuje, přeskočte tento krok.
-
-### 4. Stažení env proměnných
-
-```bash
-vercel env pull .env.local
-```
-
-Tento příkaz vytvoří soubor `.env.local` s vyplněnými hodnotami:
-```
-KV_REST_API_URL=https://...
-KV_REST_API_TOKEN=...
+npx tsx scripts/migrate-to-postgres.ts
 ```
 
 ### 5. Spuštění vývojového serveru
@@ -56,72 +53,88 @@ Aplikace běží na [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## Nasazení na Vercel
+## Nasazení
 
-```bash
-vercel deploy
-```
+Nasazení na Hetzner VPS (nebo jiný server s PostgreSQL):
 
-Nebo produkční nasazení:
-
-```bash
-vercel --prod
-```
+1. Nastavte `DATABASE_URL` v prostředí
+2. `npx prisma migrate deploy`
+3. `npm run build && npm run start`
 
 ---
 
-## Matematický model
+## Routing
+
+| Route | Obsah |
+|-------|-------|
+| `/` | Výběr projektu — karty ClearWay a DALRIS |
+| `/clearway` | ClearWay kalkulátor (slidery, grafy, porovnání) |
+| `/dalris` | DALRIS kalkulátor (placeholder model) |
+| `/api/{slug}/cities` | REST API pro CRUD operace s městy |
+
+---
+
+## Matematický model — ClearWay
 
 | Krok | Vzorec | Popis |
 |------|--------|-------|
 | CI | `(V × d × 365) / L` | Index pokrytí |
-| k  | `365 / T` | Saturační konstanta |
-| Qf | `1 − e^(−CI/k)` | Kvalita frekvence |
-| R  | `min(L_m / L, 1)` | Poměr pokrytí |
-| Q  | `R × Qf` | Kombinovaná kvalita |
+| Qf | `1 − e^(−CI/k_fleet)` | Kvalita frekvence |
+| Qt | `min(1, e^(-(T-T_ideal)/T_ideal))` | Čerstvost dat |
+| R  | `coverage_pct / 100` | Poměr pokrytí |
+| Q  | `R × Qf × Qt` | Kombinovaná kvalita |
 | SV | `E × α × Δt × Cm` | Teoretická sociální hodnota |
 | SV_real | `SV × Q` | Reálná sociální hodnota |
 | P  | `a × L + b × SV_real` | Výsledná cena |
 
-## Parametry
+## Matematický model — DALRIS (placeholder)
 
-| Symbol | Popis | Jednotka |
-|--------|-------|----------|
-| L | Celková délka silnic | km |
-| L_m | Proměřená délka | km |
-| V | Počet vozidel | vozidel |
-| d | Denní km / vozidlo | km/voz |
-| T | Interval aktualizace | dní |
-| E | Výjezdy IZS ročně | výjezdů |
-| α | Podíl ovlivněných výjezdů | 0–1 |
-| Δt | Úspora času / výjezd | min |
-| Cm | Hodnota minuty | CZK/min |
-| a | Cena infrastruktury | CZK/km |
-| b | Podíl hodnoty | 0–1 |
+| Krok | Vzorec | Popis |
+|------|--------|-------|
+| P | `L × pricePerKm` | Cena za km × délka sítě |
+
+---
 
 ## Struktura projektu
 
 ```
-clearway-model/
-  pages/
-    _app.js           ← Global CSS import
-    index.js          ← Hlavní aplikace (UI)
-    api/
-      cities.js       ← REST API (Vercel KV CRUD)
-  lib/
-    model.js          ← computeModel(), PARAM_META, PRESET_CITIES
-    useCities.js      ← Custom React hook
-  styles/
-    globals.css       ← CSS proměnné + layout
-  .env.local.example  ← Vzorové env proměnné
-  vercel.json         ← Konfigurace Vercel
-  README.md
+pages/
+  index.tsx                    ← Homepage (výběr projektu)
+  [project]/
+    index.tsx                  ← Kalkulátor (dynamické dle projektu)
+  api/
+    [project]/
+      cities.ts                ← REST API (PostgreSQL CRUD)
+lib/
+  db.ts                        ← Prisma client singleton
+  storage.ts                   ← Prisma-based storage layer
+  useCities.ts                 ← React hook (project-aware)
+  useTheme.ts                  ← Dark/light theme toggle
+  utils.ts                     ← Utility helpers
+  projects/
+    registry.ts                ← ProjectDefinition, registry
+    clearway/
+      model.ts                 ← ClearWay model
+      index.ts                 ← ClearWay project definition
+    dalris/
+      model.ts                 ← DALRIS placeholder model
+      index.ts                 ← DALRIS project definition
+prisma/
+  schema.prisma                ← Database schema
+components/ui/                 ← shadcn/ui komponenty
+styles/globals.css             ← CSS proměnné + layout
 ```
+
+## Přidání nového projektu
+
+1. Vytvořte `lib/projects/<slug>/model.ts` s `computeModel()`, `PARAM_META`, `PRESET_CITIES`
+2. Vytvořte `lib/projects/<slug>/index.ts` implementující `ProjectDefinition`
+3. Zaregistrujte v `lib/projects/registry.ts`
 
 ## Technologie
 
 - **Next.js 14** (pages router)
-- **Vercel KV** — Redis-kompatibilní KV databáze pro sdílená data
+- **Prisma** + **PostgreSQL** — databáze pro sdílená data
 - **Recharts** — Grafy
+- **Tailwind CSS** + **shadcn/ui** — Styling
 - **UUID** — Generování ID měst
-- **Syne + JetBrains Mono** — Google Fonts
