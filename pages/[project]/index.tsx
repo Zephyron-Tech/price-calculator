@@ -13,6 +13,8 @@ import { Sun, Moon, Menu, X, ArrowLeft } from 'lucide-react';
 import { getProject, PROJECT_SLUGS } from '../../lib/projects/registry';
 import type { ProjectDefinition } from '../../lib/projects/registry';
 import { K_FLEET, T_IDEAL } from '../../lib/projects/clearway/model';
+import { DEFAULT_TIERS, SLA_OPTIONS, computeModel as dalrisCompute } from '../../lib/projects/dalris/model';
+import type { HardwareTier } from '../../lib/projects/dalris/model';
 import { useCities } from '../../lib/useCities';
 import type { GenericCity } from '../../lib/useCities';
 import { useTheme } from '../../lib/useTheme';
@@ -107,7 +109,7 @@ interface ParamSliderProps {
   paramKey: string;
   city: GenericCity;
   project: ProjectDefinition;
-  onUpdate: (key: string, value: number) => void;
+  onUpdate: (key: string, value: unknown) => void;
 }
 
 function ParamSlider({ paramKey, city, project, onUpdate }: ParamSliderProps) {
@@ -169,7 +171,7 @@ function ParamSlider({ paramKey, city, project, onUpdate }: ParamSliderProps) {
               inputRef.current?.blur();
             }
           }}
-          className="font-mono text-[15px] text-cw-text-0 text-right bg-transparent w-[60px] px-1 py-0 rounded-[4px] outline-none border border-transparent hover:border-cw-border focus:border-cw-accent transition-colors duration-100"
+          className="font-mono text-[15px] text-cw-text-0 text-right bg-transparent w-[80px] px-1 py-0 rounded-[4px] outline-none border border-transparent hover:border-cw-border focus:border-cw-accent transition-colors duration-100"
           aria-label={meta.label}
         />
         {displayUnit && (
@@ -200,6 +202,34 @@ function ParamSlider({ paramKey, city, project, onUpdate }: ParamSliderProps) {
           = {fNum(Math.round((val / 100) * (city.L as number)))} km z {fNum(city.L as number)} km celkem
         </div>
       )}
+
+      {paramKey === 't_recovery' && project.slug === 'dalris' && (() => {
+        const vReady = (city.P_base_risk as number) * (1 + 24 / val);
+        const slaColor = val <= 12 ? 'var(--cw-red)' : val <= 24 ? 'var(--cw-orange)' : 'var(--cw-green)';
+        return (
+          <>
+            <div className="flex gap-1.5 mt-1.5">
+              {SLA_OPTIONS.map((h) => (
+                <button
+                  key={h}
+                  onClick={() => onUpdate(paramKey, h)}
+                  className={cn(
+                    'font-mono text-[11px] px-2 py-0.5 rounded-[4px] border transition-colors cursor-pointer',
+                    val === h
+                      ? 'bg-cw-accent/20 border-cw-accent text-cw-accent-hi'
+                      : 'border-cw-border text-cw-text-2 hover:text-cw-text-1 hover:border-cw-text-2'
+                  )}
+                >
+                  {h}h
+                </button>
+              ))}
+            </div>
+            <div className="font-mono text-[12px] mt-1 leading-relaxed" style={{ color: slaColor }}>
+              &rarr; V_readiness = {fCZK(vReady)}
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }
@@ -228,7 +258,7 @@ function ResultCard({ label, value, sub, hero, color }: ResultCardProps) {
     >
       <div className="text-[13px] text-cw-text-2 tracking-[0.08em] uppercase mb-1">{label}</div>
       <div
-        className={cn('font-mono font-semibold', hero ? 'text-[30px]' : 'text-[21px]')}
+        className={cn('font-mono font-semibold break-words', hero ? 'text-[24px] sm:text-[30px]' : 'text-[18px] sm:text-[21px]')}
         style={{ color: valueColor }}
       >
         {value}
@@ -318,15 +348,264 @@ function GenericResultCards({ city, project }: ClearwayCalcProps) {
   );
 }
 
+// ─── TierField — inline numeric input for tier editing ───────────────────────
+
+interface TierFieldProps {
+  value: number | string;
+  numeric?: boolean;
+  onChange: (val: number | string) => void;
+  suffix?: string;
+  className?: string;
+}
+
+function TierField({ value, numeric = true, onChange, suffix, className }: TierFieldProps) {
+  const [str, setStr] = useState(String(value));
+  const focused = useRef(false);
+  const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!focused.current) setStr(String(value));
+  }, [value]);
+
+  function commit(raw: string) {
+    if (numeric) {
+      const n = parseFloat(raw.replace(',', '.').replace(/[^\d.-]/g, ''));
+      if (isFinite(n) && n >= 0) onChange(Math.round(n));
+      else setStr(String(value));
+    } else {
+      onChange(raw);
+    }
+  }
+
+  return (
+    <span className={cn('inline-flex items-center gap-0.5', className)}>
+      <input
+        ref={ref}
+        type="text"
+        inputMode={numeric ? 'numeric' : 'text'}
+        value={str}
+        onChange={(e) => setStr(e.target.value)}
+        onFocus={() => { focused.current = true; }}
+        onBlur={() => { focused.current = false; commit(str); }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') ref.current?.blur();
+          if (e.key === 'Escape') { setStr(String(value)); focused.current = false; ref.current?.blur(); }
+        }}
+        className={cn(
+          'font-mono text-[13px] text-cw-text-0 bg-transparent px-1 py-0 rounded-[4px] outline-none border border-transparent hover:border-cw-border focus:border-cw-accent transition-colors duration-100',
+          numeric ? 'w-[80px] text-right' : 'flex-1 min-w-0 text-left'
+        )}
+      />
+      {suffix && <span className="font-mono text-[11px] text-cw-text-2">{suffix}</span>}
+    </span>
+  );
+}
+
+// ─── TierEditor — single hardware tier card ──────────────────────────────────
+
+interface TierEditorProps {
+  tier: HardwareTier;
+  index: number;
+  onUpdate: (index: number, tier: HardwareTier) => void;
+  onRemove: (index: number) => void;
+}
+
+function TierEditor({ tier, index, onUpdate, onRemove }: TierEditorProps) {
+  const maint = tier.count * tier.maintenance;
+  const capex = tier.count * tier.unitCapex;
+
+  return (
+    <div className="bg-cw-bg-3 border border-cw-border rounded-[6px] p-3 mb-2">
+      <div className="flex items-center justify-between mb-2">
+        <TierField
+          value={tier.name}
+          numeric={false}
+          onChange={(v) => onUpdate(index, { ...tier, name: String(v) })}
+          className="font-semibold"
+        />
+        <button
+          onClick={() => onRemove(index)}
+          className="text-cw-text-2 hover:text-cw-red text-[13px] px-1.5 py-0.5 rounded-[4px] hover:bg-cw-bg-2 transition-colors cursor-pointer"
+          title="Odebrat uzel"
+        >
+          &times;
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[12px] text-cw-text-2">
+        <div>
+          <div className="mb-0.5">Počet</div>
+          <TierField value={tier.count} onChange={(v) => onUpdate(index, { ...tier, count: v as number })} suffix="ks" />
+        </div>
+        <div>
+          <div className="mb-0.5">Údržba/ks/rok</div>
+          <TierField value={tier.maintenance} onChange={(v) => onUpdate(index, { ...tier, maintenance: v as number })} suffix="Kč" />
+        </div>
+        <div>
+          <div className="mb-0.5">CAPEX/ks</div>
+          <TierField value={tier.unitCapex} onChange={(v) => onUpdate(index, { ...tier, unitCapex: v as number })} suffix="Kč" />
+        </div>
+      </div>
+      <div className="font-mono text-[11px] text-cw-text-1 mt-2 pt-1.5 border-t border-cw-border/50">
+        Provoz {fCZK(maint)}/rok &middot; Investice {fCZK(capex)}
+      </div>
+    </div>
+  );
+}
+
+// ─── DalrisResultCards ───────────────────────────────────────────────────────
+
+interface DalrisCalcProps {
+  city: GenericCity;
+  project: ProjectDefinition;
+}
+
+function DalrisResultCards({ city, project }: DalrisCalcProps) {
+  const m = useMemo(() => project.computeModel(city), [city, project]);
+  const tiers = (city.tiers as HardwareTier[] | undefined) ?? [];
+
+  const slaColor = (city.t_recovery as number) <= 12
+    ? 'var(--cw-red)'
+    : (city.t_recovery as number) <= 24
+      ? 'var(--cw-orange)'
+      : 'var(--cw-green)';
+
+  return (
+    <>
+      <div className="text-[13px] font-bold tracking-[0.12em] uppercase text-cw-text-2 mb-3">
+        OPEX &mdash; Roční provoz
+      </div>
+      <ResultCard
+        label="Licence platformy"
+        value={fCZK(city.L_base as number)}
+        sub="L_base — roční poplatek"
+      />
+      <ResultCard
+        label="Údržba hardwarových uzlů"
+        value={fCZK(m.totalMaintenance)}
+        sub={`SUM(N_i × C_i) — ${tiers.length} ${tiers.length === 1 ? 'uzel' : tiers.length < 5 ? 'uzly' : 'uzlů'}`}
+      />
+      <ResultCard
+        color={slaColor}
+        label="Pohotovostní poplatek (SLA)"
+        value={fCZK(m.V_readiness)}
+        sub={`${fCZK(city.P_base_risk as number)} × ${(1 + 24 / (city.t_recovery as number)).toFixed(2)} (SLA ${city.t_recovery}h)`}
+      />
+      <ResultCard
+        hero
+        label="Celkový roční OPEX"
+        value={fCZK(m.P_OPEX)}
+        sub="Licence + údržba uzlů + pohotovost"
+      />
+
+      <div className="text-[13px] font-bold tracking-[0.12em] uppercase text-cw-text-2 mt-5 mb-3">
+        CAPEX &mdash; Počáteční investice
+      </div>
+      {tiers.map((t, i) => (
+        <ResultCard
+          key={i}
+          label={t.name}
+          value={fCZK(t.count * t.unitCapex)}
+          sub={`${t.count} × ${fCZK(t.unitCapex)}`}
+        />
+      ))}
+      <ResultCard
+        hero
+        label="Celková počáteční investice"
+        value={fCZK(m.totalCAPEX)}
+        sub={`SUM(N_i × unitCapex_i) — ${tiers.length} ${tiers.length === 1 ? 'uzel' : tiers.length < 5 ? 'uzly' : 'uzlů'}`}
+      />
+    </>
+  );
+}
+
+// ─── DalrisCalculatorTab ─────────────────────────────────────────────────────
+
+interface DalrisCalculatorTabProps {
+  city: GenericCity;
+  project: ProjectDefinition;
+  onUpdate: (key: string, value: unknown) => void;
+}
+
+function DalrisCalculatorTab({ city, project, onUpdate }: DalrisCalculatorTabProps) {
+  const tiers: HardwareTier[] = (city.tiers as HardwareTier[] | undefined) ?? [];
+
+  const handleTierUpdate = useCallback((index: number, updated: HardwareTier) => {
+    const newTiers = [...tiers];
+    newTiers[index] = updated;
+    onUpdate('tiers', newTiers);
+  }, [tiers, onUpdate]);
+
+  const handleTierRemove = useCallback((index: number) => {
+    const newTiers = tiers.filter((_, i) => i !== index);
+    onUpdate('tiers', newTiers);
+  }, [tiers, onUpdate]);
+
+  const handleTierAdd = useCallback(() => {
+    const newTier: HardwareTier = { name: 'Nový uzel', count: 5, maintenance: 5000, unitCapex: 20000 };
+    onUpdate('tiers', [...tiers, newTier]);
+  }, [tiers, onUpdate]);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_440px] lg:h-full lg:min-h-0">
+      {/* Left panel — sliders + tiers */}
+      <div className="p-4 md:p-5 border-b border-cw-border lg:border-b-0 lg:border-r lg:overflow-y-auto">
+        {project.paramGroups.map((group) => {
+          const keys = Object.entries(project.paramMeta)
+            .filter(([, meta]) => meta.group === group)
+            .map(([k]) => k);
+          return (
+            <div key={group} className="mb-6">
+              <div className="text-[13px] font-bold tracking-[0.12em] uppercase text-cw-text-2 mb-3 pb-1.5 border-b border-cw-border">
+                {group}
+              </div>
+              {keys.map((k) => (
+                <ParamSlider key={k} paramKey={k} city={city} project={project} onUpdate={onUpdate} />
+              ))}
+            </div>
+          );
+        })}
+
+        {/* Hardware Tiers */}
+        <div className="mb-6">
+          <div className="text-[13px] font-bold tracking-[0.12em] uppercase text-cw-text-2 mb-3 pb-1.5 border-b border-cw-border">
+            Hardwarové uzly
+          </div>
+          {tiers.map((tier, i) => (
+            <TierEditor
+              key={i}
+              tier={tier}
+              index={i}
+              onUpdate={handleTierUpdate}
+              onRemove={handleTierRemove}
+            />
+          ))}
+          <Button variant="outline" size="sm" onClick={handleTierAdd} className="mt-1">
+            + Přidat uzel
+          </Button>
+        </div>
+      </div>
+
+      {/* Right panel — results */}
+      <div className="p-4 md:p-5 bg-cw-bg-1 lg:overflow-y-auto">
+        <DalrisResultCards city={city} project={project} />
+      </div>
+    </div>
+  );
+}
+
 // ─── CalculatorTab ────────────────────────────────────────────────────────────
 
 interface CalculatorTabProps {
   city: GenericCity;
   project: ProjectDefinition;
-  onUpdate: (key: string, value: number) => void;
+  onUpdate: (key: string, value: unknown) => void;
 }
 
 function CalculatorTab({ city, project, onUpdate }: CalculatorTabProps) {
+  if (project.slug === 'dalris') {
+    return <DalrisCalculatorTab city={city} project={project} onUpdate={onUpdate} />;
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_440px] lg:h-full lg:min-h-0">
       {/* Sliders */}
@@ -753,8 +1032,13 @@ function Sidebar({ cities, activeCityId, setActiveCityId, saving, addCity, delet
               >
                 <div className="font-semibold text-[15px] text-cw-text-0">{city.name}</div>
                 <div className="font-mono text-[13px] text-cw-accent-hi mt-0.5">
-                  {fCZK(m.P)} / rok
+                  {project.slug === 'dalris' ? `OPEX ${fCZK(m.P)} / rok` : `${fCZK(m.P)} / rok`}
                 </div>
+                {project.slug === 'dalris' && (
+                  <div className="font-mono text-[11px] text-cw-text-2 mt-0.5">
+                    Investice {fCZK(m.totalCAPEX)}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -813,7 +1097,7 @@ export default function ProjectPage({ projectSlug }: ProjectPageProps) {
     addCity, deleteCity, updateParam,
   } = useCities(projectSlug);
 
-  const handleParamUpdate = useCallback((key: string, value: number) => {
+  const handleParamUpdate = useCallback((key: string, value: unknown) => {
     if (!activeCityId) return;
     updateParam(activeCityId, key, value);
   }, [activeCityId, updateParam]);

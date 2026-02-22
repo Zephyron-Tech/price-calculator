@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Multi-project pricing calculator for road infrastructure management. Currently supports two projects:
+Multi-project pricing calculator for urban infrastructure systems. Currently supports two projects:
 - **ClearWay** (v2.0) — intelligent road network management (Smart City / IZS), 8-step pricing model
-- **DALRIS** (v0.1) — road infrastructure risk diagnostics, placeholder model (`P = L × pricePerKm`)
+- **DALRIS** (v1.0) — Disaster Alert & Response Information System, crisis communication via LoRa/WiFi/FM, OPEX/CAPEX model with hardware tiers
 
 Built with Next.js 14 (pages router), TypeScript, Tailwind CSS, Recharts, and Prisma ORM with PostgreSQL.
 
@@ -35,7 +35,7 @@ No test framework is configured.
 - `registry.ts` — `ProjectDefinition` interface, `PROJECT_REGISTRY` map, `getProject()`, `PROJECT_SLUGS`. Each project defines its own `computeModel()`, `paramMeta`, `presetCities`, and `paramGroups`.
 - `clearway/model.ts` — ClearWay 8-step pricing formula. Exports `computeModel`, `PARAM_META`, `PRESET_CITIES`.
 - `clearway/index.ts` — Wraps model into `ProjectDefinition`.
-- `dalris/model.ts` — DALRIS placeholder model (two params: `L`, `pricePerKm`).
+- `dalris/model.ts` — DALRIS enterprise model with `HardwareTier[]`, OPEX/CAPEX formulas, SLA readiness.
 - `dalris/index.ts` — Wraps model into `ProjectDefinition`.
 
 **To add a new project**: create `lib/projects/<slug>/model.ts` + `index.ts`, register in `registry.ts`.
@@ -73,11 +73,18 @@ DATABASE_URL=postgresql://user:password@host:5432/price_calculator
 |-------|---------|
 | `/` | Homepage — project selection cards |
 | `/clearway` | ClearWay calculator (sliders, charts, compare, sidebar) |
-| `/dalris` | DALRIS calculator (placeholder model, two sliders) |
+| `/dalris` | DALRIS calculator (OPEX/CAPEX model, sliders + hardware tier editor) |
 | `/api/{slug}/cities` | Project-scoped city CRUD |
 
 ## Mathematical Models
 
 **ClearWay**: `P = a × L + b × SV_real`, where SV_real is the quality-adjusted social value derived from fleet coverage, data freshness, and emergency service parameters. Full 8-step computation in `lib/projects/clearway/model.ts`.
 
-**DALRIS** (placeholder): `P = L × pricePerKm`. To be replaced with the real model later.
+**DALRIS** (Disaster Alert & Response Information System): Crisis communication pricing — OPEX/CAPEX model with dynamic hardware tiers (LoRa sensors, WiFi info points, FM broadcast nodes).
+- `OPEX = L_base + SUM(N_i × C_i) + V_readiness`
+- `V_readiness = P_base_risk × (1 + 24 / t_recovery)` — SLA-driven readiness cost
+- `CAPEX = SUM(N_i × unitCapex_i)` — one-time hardware investment
+- Slider params: `L_base` (platform licence), `P_base_risk` (readiness base), `t_recovery` (SLA hours)
+- Hardware tiers (`HardwareTier[]`): dynamic list of {name, count, maintenance, unitCapex} stored as JSON in city params
+- Custom `DalrisCalculatorTab` with inline tier editor + OPEX/CAPEX result breakdown
+- Full model in `lib/projects/dalris/model.ts`

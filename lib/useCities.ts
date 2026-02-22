@@ -131,7 +131,7 @@ export function useCities(projectSlug: string) {
 
   // ─── Update a single parameter ────────────────────────────────────────────
   const updateParam = useCallback(
-    (cityId: string, key: string, value: number) => {
+    (cityId: string, key: string, value: unknown) => {
       setCities((prev) => {
         const updated = prev.map((c) => {
           if (c.id !== cityId) return c;
