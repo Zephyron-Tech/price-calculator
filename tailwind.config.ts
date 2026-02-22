@@ -25,8 +25,9 @@ const config: Config = {
         'cw-red':       'var(--cw-red)',
       },
       fontFamily: {
-        mono: ['"JetBrains Mono"', 'monospace'],
-        sans: ['Syne', 'sans-serif'],
+        mono:    ['var(--font-mono)', 'monospace'],
+        sans:    ['var(--font-sans)', 'sans-serif'],
+        display: ['var(--font-display)', 'sans-serif'],
       },
     },
   },

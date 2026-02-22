@@ -9,7 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ReferenceLine, ReferenceArea, Cell,
 } from 'recharts';
-import { Sun, Moon, Menu, X, ArrowLeft } from 'lucide-react';
+import { Sun, Moon, Menu, X, ArrowLeft, Lock } from 'lucide-react';
 import { getProject, PROJECT_SLUGS } from '../../lib/projects/registry';
 import type { ProjectDefinition } from '../../lib/projects/registry';
 import { K_FLEET, T_IDEAL } from '../../lib/projects/clearway/model';
@@ -18,6 +18,7 @@ import type { HardwareTier } from '../../lib/projects/dalris/model';
 import { useCities } from '../../lib/useCities';
 import type { GenericCity } from '../../lib/useCities';
 import { useTheme } from '../../lib/useTheme';
+import { useAuth } from '../../lib/authContext';
 import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -53,27 +54,27 @@ function fPct(val: number): string {
 const ALPHA_VALUES = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30];
 
 const CHART_DARK = {
-  accent:   '#1d6fe8',
-  accentHi: '#3b8cf8',
+  accent:   '#4235e5',
+  accentHi: '#6459f0',
   green:    '#10b981',
   orange:   '#f59e0b',
   red:      '#ef4444',
-  text1:    '#a0bcd8',
-  text2:    '#6f90aa',
-  border:   '#1a2d4a',
-  bg3:      '#0f1e35',
+  text1:    '#9ba8cc',
+  text2:    '#636e99',
+  border:   '#282e50',
+  bg3:      '#1f233e',
 };
 
 const CHART_LIGHT = {
-  accent:   '#1d6fe8',
-  accentHi: '#1558c9',
+  accent:   '#4235e5',
+  accentHi: '#2d22c7',
   green:    '#059669',
   orange:   '#d97706',
   red:      '#dc2626',
-  text1:    '#1a3658',
-  text2:    '#3b5e80',
-  border:   '#b8cce8',
-  bg3:      '#dce7f7',
+  text1:    '#1c224a',
+  text2:    '#3d4780',
+  border:   '#c0cbf0',
+  bg3:      '#e1e6fc',
 };
 
 type ChartColors = typeof CHART_DARK;
@@ -87,11 +88,12 @@ const DECIMAL_PARAMS = new Set(['delta_t']);
 function toDisplayValue(paramKey: string, val: number): string {
   if (PERCENT_PARAMS.has(paramKey)) return (val * 100).toFixed(0);
   if (DECIMAL_PARAMS.has(paramKey)) return val.toFixed(1);
-  return String(Math.round(val));
+  return Math.round(val).toLocaleString('cs-CZ');
 }
 
 function fromDisplayValue(paramKey: string, raw: string): number {
-  const normalized = raw.replace(',', '.').replace(/[^\d.-]/g, '');
+  // strip Czech thousands separator (non-breaking space U+00A0 or regular space)
+  const normalized = raw.replace(/[\u00A0\s]/g, '').replace(',', '.').replace(/[^\d.-]/g, '');
   const parsed = parseFloat(normalized);
   if (!isFinite(parsed)) return NaN;
   if (PERCENT_PARAMS.has(paramKey)) return parsed / 100;
@@ -425,10 +427,11 @@ function TierEditor({ tier, index, onUpdate, onRemove }: TierEditorProps) {
         />
         <button
           onClick={() => onRemove(index)}
-          className="text-cw-text-2 hover:text-cw-red text-[13px] px-1.5 py-0.5 rounded-[4px] hover:bg-cw-bg-2 transition-colors cursor-pointer"
+          className="flex items-center justify-center w-8 h-8 rounded-[6px] text-cw-text-2 hover:text-cw-red hover:bg-cw-bg-2 transition-colors cursor-pointer flex-shrink-0"
           title="Odebrat uzel"
+          aria-label="Odebrat uzel"
         >
-          &times;
+          <X size={16} />
         </button>
       </div>
       <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[12px] text-cw-text-2">
@@ -987,11 +990,11 @@ function Sidebar({ cities, activeCityId, setActiveCityId, saving, addCity, delet
             Města
           </div>
           <button
-            className="lg:hidden flex items-center justify-center w-7 h-7 rounded-[6px] text-cw-text-2 hover:text-cw-text-0 hover:bg-cw-bg-2 transition-colors"
+            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-[8px] text-cw-text-2 hover:text-cw-text-0 hover:bg-cw-bg-2 transition-colors cursor-pointer"
             onClick={onClose}
             aria-label="Zavřít panel"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
         <div className="flex gap-1.5">
@@ -1089,6 +1092,7 @@ export default function ProjectPage({ projectSlug }: ProjectPageProps) {
   const [activeTab, setActiveTab] = useState<TabId>('calculator');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { lock } = useAuth();
   const chartColors = theme === 'dark' ? CHART_DARK : CHART_LIGHT;
 
   const {
@@ -1168,7 +1172,7 @@ export default function ProjectPage({ projectSlug }: ProjectPageProps) {
             >
               <ArrowLeft size={16} />
             </Link>
-            <span className="text-[19px] font-extrabold tracking-[0.06em] text-cw-text-0" style={{ color: project.color }}>
+            <span className="font-display text-[22px] tracking-[0.1em] text-cw-text-0" style={{ color: project.color }}>
               {project.name.toUpperCase()}
             </span>
             <span className="font-mono text-[12px] text-cw-text-2 tracking-[0.05em] hidden sm:inline">
@@ -1180,11 +1184,19 @@ export default function ProjectPage({ projectSlug }: ProjectPageProps) {
             )}
             <button
               onClick={toggleTheme}
-              className="flex items-center justify-center w-8 h-8 rounded-[6px] text-cw-text-2 hover:text-cw-text-0 hover:bg-cw-bg-2 transition-colors cursor-pointer"
-              title={theme === 'dark' ? 'Přepnout na světlý motiv' : 'Přepnout na tmavý motiv'}
+              className="flex items-center justify-center w-9 h-9 rounded-[8px] text-cw-text-2 hover:text-cw-text-0 hover:bg-cw-bg-2 transition-colors cursor-pointer"
+              title={theme === 'dark' ? 'Světlý motiv' : 'Tmavý motiv'}
               aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
             >
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+            <button
+              onClick={lock}
+              className="flex items-center justify-center w-9 h-9 rounded-[8px] text-cw-text-2 hover:text-cw-red hover:bg-cw-bg-2 transition-colors cursor-pointer"
+              title="Zamknout"
+              aria-label="Zamknout aplikaci"
+            >
+              <Lock size={16} />
             </button>
           </header>
 

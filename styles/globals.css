@@ -1,21 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap');
+/* Fonts are loaded via next/font in _app.tsx — no @import needed here */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── CSS Variables — Dark theme (default) ───────────────────────────────── */
+/* ─── CSS Variables — Dark theme (Zephyron brand palette) ───────────────── */
 :root {
-  --cw-bg-0:      #010812;
-  --cw-bg-1:      #060f1e;
-  --cw-bg-2:      #0b1628;
-  --cw-bg-3:      #0f1e35;
-  --cw-border:    #1a2d4a;
-  --cw-accent:    #1d6fe8;
-  --cw-accent-hi: #3b8cf8;
-  --cw-text-0:    #e8f0fe;
-  --cw-text-1:    #a0bcd8;
-  --cw-text-2:    #6f90aa;
+  --cw-bg-0:      #11131e;   /* Zephyron near-black #11131E */
+  --cw-bg-1:      #151829;   /* barely lighter — no jarring split */
+  --cw-bg-2:      #1a1e33;
+  --cw-bg-3:      #1f233e;
+  --cw-border:    #282e50;
+  --cw-accent:    #4235e5;   /* Zephyron primary #4235E5 */
+  --cw-accent-hi: #6459f0;   /* lighter variant */
+  --cw-text-0:    #eaedff;
+  --cw-text-1:    #9ba8cc;
+  --cw-text-2:    #636e99;
   --cw-green:     #10b981;
   --cw-orange:    #f59e0b;
   --cw-red:       #ef4444;
@@ -24,16 +24,16 @@
 
 /* ─── CSS Variables — Light theme ────────────────────────────────────────── */
 :root.light {
-  --cw-bg-0:      #f4f7ff;
-  --cw-bg-1:      #eaf0fb;
-  --cw-bg-2:      #dce7f7;
-  --cw-bg-3:      #d0dcf0;
-  --cw-border:    #b8cce8;
-  --cw-accent:    #1d6fe8;
-  --cw-accent-hi: #1558c9;
-  --cw-text-0:    #0b1a30;
-  --cw-text-1:    #1a3658;
-  --cw-text-2:    #3b5e80;
+  --cw-bg-0:      #f5f7ff;
+  --cw-bg-1:      #eceffe;
+  --cw-bg-2:      #e1e6fc;
+  --cw-bg-3:      #d5dbf8;
+  --cw-border:    #c0cbf0;
+  --cw-accent:    #4235e5;
+  --cw-accent-hi: #2d22c7;
+  --cw-text-0:    #0b0e24;
+  --cw-text-1:    #1c224a;
+  --cw-text-2:    #3d4780;
   --cw-green:     #059669;
   --cw-orange:    #d97706;
   --cw-red:       #dc2626;
@@ -48,9 +48,14 @@ html, body, #__next {
   overflow: hidden;
   background: var(--cw-bg-0);
   color: var(--cw-text-0);
-  font-family: 'Syne', sans-serif;
+  font-family: var(--font-sans), sans-serif;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
+}
+
+/* font-display applies Bebas Neue (Surgena substitute) to H1s and brand headings */
+.font-display {
+  font-family: var(--font-display), sans-serif;
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────────────────── */
